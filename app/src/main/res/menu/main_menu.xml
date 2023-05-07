@@ -8,9 +8,16 @@
         app:showAsAction="ifRoom">
         <menu>
             <item
+                android:id="@+id/translate_action"
+                android:title="@string/translate"
+                android:icon="@drawable/ic_language_24_white"
+                app:showAsAction="never"/>
+            <item
                 android:id="@+id/logout_action"
                 android:title="@string/logout"
+                android:icon="@drawable/ic_logout_24_white"
                 app:showAsAction="never"/>
         </menu>
+
     </item>
 </menu>

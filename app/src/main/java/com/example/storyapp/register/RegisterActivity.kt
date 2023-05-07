@@ -2,33 +2,32 @@ package com.example .storyapp.register
 
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
-import android.app.Activity
 import android.content.Intent
-import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.View
-import android.view.WindowInsets
-import android.view.WindowManager
-import androidx.core.app.ActivityOptionsCompat
-import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.ViewModelProvider
 import com.example.storyapp.R
 import com.example.storyapp.databinding.ActivityRegisterBinding
 import com.example.storyapp.login.LoginActivity
+import com.example.storyapp.register.RegisterViewModel
 
 
 class RegisterActivity : AppCompatActivity() {
-    private lateinit var binding:ActivityRegisterBinding
+    private  val binding by lazy(LazyThreadSafetyMode.NONE){
+        ActivityRegisterBinding.inflate(layoutInflater)}
+
     private lateinit var registerViewModel: RegisterViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityRegisterBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         supportActionBar?.hide()
 
+        setupRegisButton()
         regisAction()
         playAnim()
         setupViewModel()
@@ -44,8 +43,8 @@ class RegisterActivity : AppCompatActivity() {
     private fun register(){
         val name = binding.edTextName.text.toString().trim()
         val email = binding.edTextEmail.text.toString().trim()
-        val password = binding.edTextPassword.toString().trim()
-        val button = binding.btnRegister
+        val password = binding.edTextPassword.text.toString().trim()
+
         when{
 
             name.isEmpty() -> {
@@ -57,26 +56,45 @@ class RegisterActivity : AppCompatActivity() {
             password.isEmpty() -> {
                 binding.edLayoutPassword.error = getString(R.string.password_alert)
             }
-            button.isEnabled ->{
-                if (password.isEmpty() && password.length < 8 && name.isEmpty()) false else true
-            }
-            button.isEnabled ->{
-                if(password.length > 8) true
-            }
+
             else ->{
-                registerViewModel.register(name,email,password)
+                if (binding.edLayoutPassword.error.isNullOrEmpty()) {
+                    registerViewModel.register(name,email,password)
+
+                    val intent = Intent(this@RegisterActivity, LoginActivity::class.java)
+                    startActivity(intent)
+                    finish()
+                }
             }
+
+
         }
-        val intent = Intent(this,LoginActivity::class.java)
-        startActivity(intent,ActivityOptionsCompat.makeSceneTransitionAnimation(this@RegisterActivity as Activity).toBundle())
-        finish()
+
+
     }
 
+    private fun  setupRegisButton(){
+        val edPassword = binding.edTextPassword
+        val regisButton = binding.btnRegister
+        regisButton.isEnabled = false
+
+        edPassword.addTextChangedListener(object: TextWatcher{
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+
+            }
+
+            override fun afterTextChanged(s: Editable?) {
+               val password = s.toString().trim()
+                regisButton.isEnabled = password.length >= 8
+            }
+
+        })
+    }
     private fun regisAction(){
-        val password = binding.edTextPassword.text
-        val button = binding.btnRegister
-       // button.isEnabled = if (password.isEmpty() && password?.length!! < 8) false else true
-        //button.isEnabled = if ( password.isNotEmpty()) true else false
         binding.btnRegister.setOnClickListener {
             register()
         }
@@ -86,12 +104,13 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun playAnim(){
-        ObjectAnimator.ofFloat(binding.ivRegister, View.TRANSLATION_X,-30f, 30f).apply {
+        ObjectAnimator.ofFloat(binding.ivRegister, View.TRANSLATION_X,-50f, 50f).apply {
             duration = 5000
             repeatCount = ObjectAnimator.INFINITE
             repeatMode =  ObjectAnimator.REVERSE
         }.start()
 
+        val image = ObjectAnimator.ofFloat(binding.ivRegister,View.ALPHA,1f).setDuration(500)
         val titleTextView = ObjectAnimator.ofFloat(binding.tvTitle,View.ALPHA,1f).setDuration(500)
         val txtViewName = ObjectAnimator.ofFloat(binding.tvName,View.ALPHA,1f).setDuration(500)
         val edTextNameLayout = ObjectAnimator.ofFloat(binding.edTextLayoutName,View.ALPHA,1f).setDuration(500)
@@ -103,7 +122,7 @@ class RegisterActivity : AppCompatActivity() {
 
         AnimatorSet().apply {
             playSequentially(
-                titleTextView,txtViewName,edTextNameLayout,txtViewEmail,edTextEmailLayout,txtViewPassword,
+                image,titleTextView,txtViewName,edTextNameLayout,txtViewEmail,edTextEmailLayout,txtViewPassword,
                 edTextPasswordLayout, registerButton
             )
         }.start()

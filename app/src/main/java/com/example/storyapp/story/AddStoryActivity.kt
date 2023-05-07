@@ -3,16 +3,11 @@ package com.example.storyapp.story
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.Manifest
-import android.content.ContentResolver
-import android.content.ContentValues
 import android.content.ContentValues.*
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.view.View
@@ -33,19 +28,14 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.ByteArrayOutputStream
 import java.io.File
 import com.example.storyapp.createTempFile
-import java.io.FileOutputStream
-import java.io.InputStream
-import java.io.OutputStream
-import java.text.SimpleDateFormat
-import java.util.*
 import retrofit2.*
 
 class AddStoryActivity : AppCompatActivity() {
+    private  val binding by lazy(LazyThreadSafetyMode.NONE){
+        ActivityAddStoryBinding.inflate(layoutInflater)}
 
-    private lateinit var binding: ActivityAddStoryBinding
     private lateinit var userPref:UserPreference
     private lateinit var curentPhotoPath: String
     private var getFile:File? =null
@@ -76,7 +66,6 @@ class AddStoryActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityAddStoryBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         supportActionBar?.title = getString(R.string.add_story)
@@ -148,7 +137,7 @@ class AddStoryActivity : AppCompatActivity() {
             val imgMultipart:MultipartBody.Part = MultipartBody.Part.createFormData("photo",reduceFile.name,reqImageFile)
 
             val token = "Bearer ${userPref.getUser().token}"
-            val client = ApiConfig.getApiService().uploadStories(token,imgMultipart,desc)
+            val client = ApiConfig().getApiService().uploadStories(token,imgMultipart,desc)
             client.enqueue(object : Callback<UploadResponse> {
                 override fun onResponse(
                     call: Call<UploadResponse>,
@@ -156,11 +145,8 @@ class AddStoryActivity : AppCompatActivity() {
                 ) {
                     val responseBody = response.body()
                     Log.d(TAG,"onResponse: ${responseBody}")
-                    if (response.isSuccessful && responseBody?.message == "Cerita berhasil dibuat" ){
+                    if (response.isSuccessful && responseBody?.message == getString(R.string.success_upload) ){
                         Toast.makeText(this@AddStoryActivity,getString(R.string.success_upload),Toast.LENGTH_SHORT).show()
-                    }else {
-                        Log.e(TAG,"onFailureResponse: ${response.message()}")
-                        Toast.makeText(this@AddStoryActivity,response.message(),Toast.LENGTH_SHORT).show()
                     }
                 }
 

@@ -1,15 +1,9 @@
 package com.example.storyapp.user
 
 import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 
 class UserPreference(context:Context){
-    val preference = context.getSharedPreferences(PREF_NAME,Context.MODE_PRIVATE)
+    val preference = context.getSharedPreferences(PREF_LOGIN,Context.MODE_PRIVATE)
 
     fun setUser(user:UserModel){
         val preferenceEdit = preference.edit()
@@ -33,12 +27,12 @@ class UserPreference(context:Context){
         val preferenceEdit = preference.edit()
         preferenceEdit.remove(NAME)
         preferenceEdit.remove(TOKEN)
-        preferenceEdit.putBoolean(LOGIN_STATE,false)
+        preferenceEdit.putBoolean(LOGIN_STATE, false)
         preferenceEdit.apply()
     }
 
     companion object{
-        const val PREF_NAME = "login"
+        const val PREF_LOGIN = "login"
         const val NAME = "name"
         const val TOKEN = "token"
         const val USER_ID = "userId"

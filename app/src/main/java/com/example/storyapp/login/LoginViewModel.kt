@@ -1,6 +1,5 @@
 package com.example.storyapp.login
 
-import android.content.ContentValues
 import android.content.ContentValues.*
 import android.util.Log
 import androidx.lifecycle.LiveData
@@ -9,7 +8,6 @@ import androidx.lifecycle.ViewModel
 import com.example.storyapp.API.ApiConfig
 import com.example.storyapp.response.LoginResponse
 import com.example.storyapp.response.LoginResult
-import com.example.storyapp.user.UserPreference
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -26,7 +24,7 @@ class LoginViewModel : ViewModel() {
 
     fun login(email:String, password:String){
         _isLoading.value = true
-        val client = ApiConfig.getApiService().login(email,password)
+        val client = ApiConfig().getApiService().login(email,password)
         client.enqueue(object : Callback<LoginResponse>{
             override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
                 _isLoading.value = false

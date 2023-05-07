@@ -1,10 +1,10 @@
 package com.example.storyapp.main
 
 import android.app.Activity
-import android.content.ContentValues
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -23,13 +23,13 @@ import com.example.storyapp.user.UserPreference
 class MainActivity : AppCompatActivity() {
     private  val binding by lazy(LazyThreadSafetyMode.NONE){
      ActivityMainBinding.inflate(layoutInflater)}
+
     private lateinit var mainViewModel: MainViewModel
     private lateinit var storyAdapter: StoryAdapter
     private lateinit var userPreference: UserPreference
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        //binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         supportActionBar?.title = getString(R.string.app_name)
@@ -37,22 +37,25 @@ class MainActivity : AppCompatActivity() {
         userPreference = UserPreference(this)
         storyAdapter = StoryAdapter()
 
+        userValidation()
+        addStory()
         setRecyclerView()
         setupViewModel()
-        addStory()
-        userValidation()
+
+
     }
 
-    private fun setupViewModel() {
-        mainViewModel = ViewModelProvider(this) [MainViewModel::class.java]
-        mainViewModel.getList(userPreference.getUser().token)
-        mainViewModel.listStories.observe(this){
-            if ( it != null){
-                storyAdapter.setListStory(it)
-            }
+    private fun userValidation(){
+        if (!userPreference.getUser().isLogin){
+            val userLogin = userPreference.getUser().isLogin
+            Log.d(TAG,userLogin.toString())
+            val intent = Intent(this@MainActivity, LoginActivity::class.java)
+            startActivity(intent,ActivityOptionsCompat.makeSceneTransitionAnimation(this@MainActivity as Activity).toBundle())
+            finish()
         }
-        mainViewModel.isLoading.observe(this){showLoading(it)}
     }
+
+
 
     private fun setRecyclerView() {
         binding.apply {
@@ -67,17 +70,23 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this@MainActivity,AddStoryActivity::class.java)
             startActivity(intent,ActivityOptionsCompat.makeSceneTransitionAnimation(this@MainActivity as Activity).toBundle())
         }
+        binding.fbRefresh.setOnClickListener {
+            this.setupViewModel()
+        }
     }
 
-    private fun userValidation(){
-        if (!userPreference.getUser().isLogin){
-            val login = userPreference.getUser().isLogin
-            Log.d(ContentValues.TAG,login.toString())
-
-            val intent = Intent(this, LoginActivity::class.java)
-            startActivity(intent,ActivityOptionsCompat.makeSceneTransitionAnimation(this@MainActivity as Activity).toBundle())
-            finish()
+    private fun setupViewModel() {
+        mainViewModel = ViewModelProvider(this) [MainViewModel::class.java]
+        mainViewModel.getList(userPreference.getUser().token)
+        mainViewModel.listStories.observe(this){
+            if ( it != null){
+                storyAdapter.setListStory(it)
+            }
         }
+        mainViewModel.isLoading.observe(this){
+            showLoading(it)
+        }
+
     }
 
 
@@ -88,9 +97,17 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when(item.itemId){
+            R.id.translate_action -> {
+               val intent = Intent(Settings.ACTION_LOCALE_SETTINGS)
+                   startActivity(intent)
+                finish()
+                true
+
+            }
             R.id.logout_action -> {
                 userPreference.logout()
                 val intent = Intent(this@MainActivity, LoginActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
                 startActivity(intent)
                 finish()
                 true
@@ -102,6 +119,8 @@ class MainActivity : AppCompatActivity() {
         binding.pbStory.visibility = if (isLoading) View.VISIBLE else View.GONE
     }
 
-
+    companion object {
+        const val TAG = "extra_tag"
+    }
 
 }

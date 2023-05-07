@@ -8,9 +8,7 @@ import android.view.ViewGroup
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.util.Pair
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.bumptech.glide.Glide
-import com.example.storyapp.R
 import com.example.storyapp.databinding.ItemStoryBinding
 import com.example.storyapp.detail.DetailActivity
 import com.example.storyapp.response.ListStoryItem
