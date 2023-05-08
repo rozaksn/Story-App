@@ -3,6 +3,7 @@ package com.example.storyapp.story
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.Manifest
+import android.app.Activity
 import android.content.ContentValues.*
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -15,6 +16,7 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.example.storyapp.API.ApiConfig
@@ -141,23 +143,21 @@ class AddStoryActivity : AppCompatActivity() {
                     call: Call<UploadResponse>,
                     response: Response<UploadResponse>
                 ) {
+                    showLoading(false)
                     val responseBody = response.body()
                     Log.d(TAG,"onResponse: $responseBody")
-                    if (response.isSuccessful && responseBody?.message == getString(R.string.success_upload) ){
+                    if (response.isSuccessful){
                         Toast.makeText(this@AddStoryActivity,getString(R.string.success_upload),Toast.LENGTH_SHORT).show()
                         val intent = Intent(this@AddStoryActivity,MainActivity::class.java)
-                        startActivity(intent)
+                        startActivity(intent,ActivityOptionsCompat.makeSceneTransitionAnimation(this@AddStoryActivity as Activity).toBundle())
                         finish()
-                    }else{
-                        Log.e(TAG, "onFailure1: ${response.message()}")
-                        Toast.makeText(this@AddStoryActivity, getString(R.string.failed_upload),Toast.LENGTH_SHORT).show()
                     }
                 }
 
 
                 override fun onFailure(call: Call<UploadResponse>, t: Throwable) {
                     showLoading(false)
-                    Log.e(TAG,"onFailure2: ${t.message}")
+                    Log.e(TAG,"onFailure: ${t.message}")
                     Toast.makeText(this@AddStoryActivity,getString(R.string.failed_upload),Toast.LENGTH_SHORT).show()
                 }
 
@@ -197,7 +197,8 @@ class AddStoryActivity : AppCompatActivity() {
         binding.btUpload.setOnClickListener {
             uploadStory()
             val intent = Intent(this@AddStoryActivity,MainActivity::class.java)
-            startActivity(intent)
+            startActivity(intent,
+                ActivityOptionsCompat.makeSceneTransitionAnimation(this@AddStoryActivity as Activity).toBundle())
             finish()
 
         }

@@ -46,6 +46,11 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    override fun onResume() {
+        super.onResume()
+        this.setupViewModel()
+    }
+
     private fun userValidation(){
         if (!userPreference.getUser().isLogin){
             val userLogin = userPreference.getUser().isLogin
