@@ -34,7 +34,6 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import com.example.storyapp.createTempFile
-import com.example.storyapp.main.MainViewModel
 import retrofit2.*
 
 class AddStoryActivity : AppCompatActivity() {
