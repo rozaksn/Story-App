@@ -9,6 +9,8 @@ import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.MediaStore
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.view.View
 import android.widget.Toast
@@ -30,6 +32,7 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import com.example.storyapp.createTempFile
+import com.example.storyapp.main.MainViewModel
 import retrofit2.*
 
 class AddStoryActivity : AppCompatActivity() {
@@ -72,14 +75,9 @@ class AddStoryActivity : AppCompatActivity() {
 
         userPref = UserPreference(this)
 
-        binding.btCamera.setOnClickListener { takePhoto() }
-        binding.btGallery.setOnClickListener { runIntentGallery() }
-        binding.btUpload.setOnClickListener { uploadStory()
-            uploadStory()
-            val intent = Intent(this,MainActivity::class.java)
-            startActivity(intent)
-            finish()
-        }
+
+        buttonAction()
+        btnUploadAction()
 
     }
 
@@ -144,16 +142,22 @@ class AddStoryActivity : AppCompatActivity() {
                     response: Response<UploadResponse>
                 ) {
                     val responseBody = response.body()
-                    Log.d(TAG,"onResponse: ${responseBody}")
+                    Log.d(TAG,"onResponse: $responseBody")
                     if (response.isSuccessful && responseBody?.message == getString(R.string.success_upload) ){
                         Toast.makeText(this@AddStoryActivity,getString(R.string.success_upload),Toast.LENGTH_SHORT).show()
+                        val intent = Intent(this@AddStoryActivity,MainActivity::class.java)
+                        startActivity(intent)
+                        finish()
+                    }else{
+                        Log.e(TAG, "onFailure1: ${response.message()}")
+                        Toast.makeText(this@AddStoryActivity, getString(R.string.failed_upload),Toast.LENGTH_SHORT).show()
                     }
                 }
 
 
                 override fun onFailure(call: Call<UploadResponse>, t: Throwable) {
                     showLoading(false)
-                    Log.e(TAG,"onFailure: ${t.message}")
+                    Log.e(TAG,"onFailure2: ${t.message}")
                     Toast.makeText(this@AddStoryActivity,getString(R.string.failed_upload),Toast.LENGTH_SHORT).show()
                 }
 
@@ -165,6 +169,39 @@ class AddStoryActivity : AppCompatActivity() {
     }
 
 
+    private fun btnUploadAction(){
+        val edDesc = binding.edTextDesc
+        val button = binding.btUpload
+        button.isEnabled = false
+        edDesc.addTextChangedListener(object :TextWatcher{
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+
+            }
+
+            override fun afterTextChanged(s: Editable?) {
+                val desc = s.toString().trim()
+                button.isEnabled = desc.length >= 1
+            }
+
+        })
+
+    }
+
+    private fun buttonAction(){
+        binding.btCamera.setOnClickListener { takePhoto() }
+        binding.btGallery.setOnClickListener { runIntentGallery() }
+        binding.btUpload.setOnClickListener {
+            uploadStory()
+            val intent = Intent(this@AddStoryActivity,MainActivity::class.java)
+            startActivity(intent)
+            finish()
+
+        }
+    }
     private fun showLoading(isLoading: Boolean) {
         binding.pbAdd.visibility = if (isLoading) View.VISIBLE else View.GONE
     }

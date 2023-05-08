@@ -37,10 +37,11 @@ class MainActivity : AppCompatActivity() {
         userPreference = UserPreference(this)
         storyAdapter = StoryAdapter()
 
+        setupViewModel()
         userValidation()
         addStory()
         setRecyclerView()
-        setupViewModel()
+
 
 
     }
@@ -75,7 +76,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupViewModel() {
+     private fun setupViewModel() {
         mainViewModel = ViewModelProvider(this) [MainViewModel::class.java]
         mainViewModel.getList(userPreference.getUser().token)
         mainViewModel.listStories.observe(this){

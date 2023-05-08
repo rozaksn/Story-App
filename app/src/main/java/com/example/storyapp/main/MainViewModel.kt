@@ -18,7 +18,7 @@ class MainViewModel:ViewModel() {
 
     fun getList(authToken: String){
         _isLoading.value = true
-         val client=ApiConfig().getApiService().getListStories(authToken = "Bearer ${authToken}")
+         val client=ApiConfig().getApiService().getListStories(authToken = "Bearer $authToken")
         client.enqueue(object : Callback<StoriesResponse>{
             override fun onResponse(
                 call: Call<StoriesResponse>,
