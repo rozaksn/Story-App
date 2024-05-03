@@ -1,16 +1,20 @@
 package com.example.storyapp.Splash
 
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.paging.ExperimentalPagingApi
 import com.example.storyapp.R
-import com.example.storyapp.login.LoginActivity
 import com.example.storyapp.main.MainActivity
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+//@AndroidEntryPoint
+@ExperimentalPagingApi
+//@HiltAndroidApp
+//@SuppressLint("Splash")
 class SplashActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,3 +33,4 @@ class SplashActivity : AppCompatActivity() {
         super.onPause()
     }
 }
+

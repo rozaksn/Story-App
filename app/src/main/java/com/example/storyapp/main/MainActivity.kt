@@ -2,31 +2,40 @@ package com.example.storyapp.main
 
 import android.app.Activity
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityOptionsCompat
-import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.paging.ExperimentalPagingApi
+import androidx.paging.PagingData
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.storyapp.R
-import com.example.storyapp.story.StoryAdapter
+import com.example.storyapp.adapter.LoadingAdapter
+import com.example.storyapp.add.AddStoryActivity
+import com.example.storyapp.data.DataStoreViewModels
 import com.example.storyapp.databinding.ActivityMainBinding
+import com.example.storyapp.entity.Story
 import com.example.storyapp.login.LoginActivity
-import com.example.storyapp.story.AddStoryActivity
-import com.example.storyapp.user.UserPreference
+import com.example.storyapp.maps.MapsActivity
+import com.example.storyapp.story.StoryAdapter
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
-
+@AndroidEntryPoint
+@ExperimentalPagingApi
 class MainActivity : AppCompatActivity() {
     private  val binding by lazy(LazyThreadSafetyMode.NONE){
      ActivityMainBinding.inflate(layoutInflater)}
-
-    private lateinit var mainViewModel: MainViewModel
+    private val mainViewModel by viewModels<MainViewModel>()
+    private val dataStoreViewModel by viewModels<DataStoreViewModels>()
+    private var token:String=""
     private lateinit var storyAdapter: StoryAdapter
-    private lateinit var userPreference: UserPreference
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,64 +43,91 @@ class MainActivity : AppCompatActivity() {
 
         supportActionBar?.title = getString(R.string.app_name)
 
-        userPreference = UserPreference(this)
         storyAdapter = StoryAdapter()
-
+        getStory()
         setupViewModel()
-        userValidation()
+
+
+
+        getToken()
+
+
         addStory()
-        setRecyclerView()
-
 
 
     }
 
-    override fun onResume() {
-        super.onResume()
-        this.setupViewModel()
-    }
 
-    private fun userValidation(){
-        if (!userPreference.getUser().isLogin){
-            val userLogin = userPreference.getUser().isLogin
-            Log.d(TAG,userLogin.toString())
-            val intent = Intent(this@MainActivity, LoginActivity::class.java)
-            startActivity(intent,ActivityOptionsCompat.makeSceneTransitionAnimation(this@MainActivity as Activity).toBundle())
-            finish()
+
+
+    private fun getToken(){
+        lifecycleScope.launchWhenCreated {
+            launch {
+                mainViewModel.getToken().collect{ myToken->
+                    if (!myToken.isNullOrEmpty()) token=myToken
+
+                }
+            }
         }
     }
 
+    private fun update(story: PagingData<Story>){
+        val state = binding.rvStories.layoutManager?.onSaveInstanceState()
+        storyAdapter.submitData(lifecycle,story)
+        binding.rvStories.layoutManager?.onRestoreInstanceState(state)
 
+    }
+
+    private fun getStory(){
+        mainViewModel.getListStories(token).observe(this){storyResult->
+            update(storyResult)
+        }
+    }
 
     private fun setRecyclerView() {
         binding.apply {
             rvStories.layoutManager = LinearLayoutManager(this@MainActivity)
             rvStories.setHasFixedSize(true)
-            rvStories.adapter = storyAdapter
+            rvStories.adapter = storyAdapter.withLoadStateFooter(footer = LoadingAdapter{storyAdapter.retry()})
+
         }
     }
 
     private fun addStory(){
         binding.fbAddStory.setOnClickListener {
-            val intent = Intent(this@MainActivity,AddStoryActivity::class.java)
+            val intent = Intent(this@MainActivity, AddStoryActivity::class.java)
             startActivity(intent,ActivityOptionsCompat.makeSceneTransitionAnimation(this@MainActivity as Activity).toBundle())
         }
         binding.fbRefresh.setOnClickListener {
             this.setupViewModel()
+
         }
     }
 
      private fun setupViewModel() {
-        mainViewModel = ViewModelProvider(this) [MainViewModel::class.java]
-        mainViewModel.getList(userPreference.getUser().token)
-        mainViewModel.listStories.observe(this){
-            if ( it != null){
-                storyAdapter.setListStory(it)
-            }
-        }
-        mainViewModel.isLoading.observe(this){
-            showLoading(it)
-        }
+         dataStoreViewModel.getUserModel().observe(this@MainActivity) { userModel ->
+             if (!userModel.isLogin) {
+                 Log.d(TAG,token)
+                 val intent = Intent(this, LoginActivity::class.java)
+                 startActivity(intent/*,ActivityOptionsCompat.makeSceneTransitionAnimation(this@MainActivity as Activity).toBundle()*/)
+                 finish()
+             } else {
+                 mainViewModel.getListStories(token).observe(this) {result->
+                     setRecyclerView()
+                     update(result)
+
+                     showLoading(false)
+                 }
+
+
+             }
+
+
+         }
+
+
+
+
 
     }
 
@@ -110,8 +146,14 @@ class MainActivity : AppCompatActivity() {
                 true
 
             }
+            R.id.maps_menu -> {
+                val intentMap = Intent(this@MainActivity,MapsActivity::class.java)
+                startActivity(intentMap)
+                finish()
+                true
+            }
             R.id.logout_action -> {
-                userPreference.logout()
+                dataStoreViewModel.userLogout()
                 val intent = Intent(this@MainActivity, LoginActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
                 startActivity(intent)

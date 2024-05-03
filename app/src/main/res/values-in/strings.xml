@@ -7,25 +7,15 @@
     <string name="password">Password</string>
     <string name="registring">Daftar</string>
     <string name="login">Masuk</string>
-    <string name="errorName">Masukkan nama anda</string>
     <string name="errorEmail">Masukkan email anda</string>
     <string name="errorPassword">Masukkan password anda</string>
-    <string name="alertMessage">Akun anda telah selessai dibuat. Silakan login.</string>
-    <string name="positiveBtn">Lanjut</string>
     <string name="password_alert">Password minimal terdiri dari 8 karakter</string>
     <string name="email_alert">Format email salah</string>
     <string name="name_alert">Nama tidak boleh kosong</string>
-    <string name="register_success">Registrasi berhasil</string>
     <string name="login_success">Login berhasil</string>
-    <string name="register_failed">Registrasi gagal</string>
-    <string name="login_failed">Login gagal</string>
     <string name="description">Deskripsi</string>
-    <string name="login_welcome">Login</string>
-    <string name="register_welcome">Sign Up</string>
     <string name="welcome">Selamat Datang!</string>
-    <string name="title_welcome">Silakan bagikan cerita anda disini</string>
     <string name="next_button">Lanjut</string>
-    <string name="welcome_message">Selamat Datang!</string>
     <string name="desc_hint">Tambahkan Deskripsi</string>
     <string name="camera">Kamera</string>
     <string name="gallery">Galeri</string>
@@ -33,7 +23,6 @@
     <string name="permission_not_accepted">Tidak mendapat izin</string>
     <string name="add_story">Add Story</string>
     <string name="failed_upload">Upload gagal</string>
-    <string name="not_selected_image">Silakan pilih gambar dahulu</string>
     <string name="more_menu">More</string>
     <string name="logout">Logout</string>
     <string name="detail">Detail story</string>
@@ -41,4 +30,6 @@
     <string name="login_data">Pastikan data yang anda isikan sudah benar</string>
     <string name="choose_picture">Pilih gambar</string>
     <string name="translate">Ganti bahasa</string>
+    <string name="title_activity_maps">Peta</string>
+    <string name="retry">Coba lagi</string>
 </resources>

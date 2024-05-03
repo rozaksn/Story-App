@@ -3,23 +3,25 @@ package com.example .storyapp.register
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
-import androidx.lifecycle.ViewModelProvider
+import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
+import androidx.paging.ExperimentalPagingApi
 import com.example.storyapp.R
 import com.example.storyapp.databinding.ActivityRegisterBinding
 import com.example.storyapp.login.LoginActivity
 import com.example.storyapp.register.RegisterViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
-
+@AndroidEntryPoint
+@ExperimentalPagingApi
 class RegisterActivity : AppCompatActivity() {
     private  val binding by lazy(LazyThreadSafetyMode.NONE){
         ActivityRegisterBinding.inflate(layoutInflater)}
-
-    private lateinit var registerViewModel: RegisterViewModel
+    private val registerViewModel by viewModels<RegisterViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,7 +38,6 @@ class RegisterActivity : AppCompatActivity() {
 
 
     private fun setupViewModel(){
-        registerViewModel = ViewModelProvider(this)[RegisterViewModel::class.java]
         registerViewModel.isLoading.observe(this){showLoading(it)}
     }
 

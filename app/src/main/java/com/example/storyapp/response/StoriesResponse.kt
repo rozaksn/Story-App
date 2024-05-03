@@ -2,13 +2,17 @@ package com.example.storyapp.response
 
 import kotlinx.parcelize.Parcelize
 import android.os.Parcelable
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import com.example.storyapp.entity.Story
 import com.google.gson.annotations.SerializedName
 
 
 data class StoriesResponse(
 
 	@field:SerializedName("listStory")
-	val listStory: ArrayList<ListStoryItem>,
+	val listStory: List<Story>,
 
 	@field:SerializedName("error")
 	val error: Boolean,
@@ -16,8 +20,6 @@ data class StoriesResponse(
 	@field:SerializedName("message")
 	val message: String
 )
-
-
 data class ListStoryItem(
 
 	@field:SerializedName("photoUrl")

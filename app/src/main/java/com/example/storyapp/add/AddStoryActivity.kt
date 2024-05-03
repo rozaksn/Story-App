@@ -1,53 +1,60 @@
-package com.example.storyapp.story
+package com.example.storyapp.add
 
-import androidx.appcompat.app.AppCompatActivity
-import android.os.Bundle
 import android.Manifest
 import android.app.Activity
-import android.content.ContentValues.*
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
+import android.location.Location
 import android.net.Uri
+import android.os.Bundle
 import android.provider.MediaStore
+import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import com.example.storyapp.API.ApiConfig
+import androidx.lifecycle.lifecycleScope
+import androidx.paging.ExperimentalPagingApi
 import com.example.storyapp.R
+import com.example.storyapp.createTempFile
 import com.example.storyapp.databinding.ActivityAddStoryBinding
 import com.example.storyapp.main.MainActivity
 import com.example.storyapp.reduceFileSize
-import com.example.storyapp.response.UploadResponse
 import com.example.storyapp.uriToFile
-import com.example.storyapp.user.UserPreference
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
-import com.example.storyapp.createTempFile
-import retrofit2.*
 
+@AndroidEntryPoint
+@ExperimentalPagingApi
 class AddStoryActivity : AppCompatActivity() {
     private  val binding by lazy(LazyThreadSafetyMode.NONE){
         ActivityAddStoryBinding.inflate(layoutInflater)}
-
-    private lateinit var userPref:UserPreference
+    private val addStoryViewModel by viewModels<AddStoryViewModel>()
     private lateinit var curentPhotoPath: String
     private var getFile:File? =null
+    private var location:Location? = null
+    private lateinit var fusedLocation :FusedLocationProviderClient
+    private var token:String = ""
 
-    companion object{
-        private val REQUIRED_PERMISSION = arrayOf(Manifest.permission.CAMERA)
-        private const val REQUEST_CODE_PERMISSION = 10
-    }
+
+
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -73,10 +80,12 @@ class AddStoryActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         supportActionBar?.title = getString(R.string.add_story)
+        fusedLocation = LocationServices.getFusedLocationProviderClient(this)
+        //userPref = UserPreference(this)
 
-        userPref = UserPreference(this)
 
 
+        getToken()
         buttonAction()
         btnUploadAction()
 
@@ -109,6 +118,17 @@ class AddStoryActivity : AppCompatActivity() {
 
     }
 
+    private fun getToken(){
+        lifecycleScope.launchWhenCreated {
+            launch {
+                addStoryViewModel.getToken().collect{ myToken->
+                    if (!myToken.isNullOrEmpty()) token=myToken
+
+                }
+            }
+        }
+    }
+
     private fun runIntentGallery(){
         val intent = Intent()
         intent.action = Intent.ACTION_GET_CONTENT
@@ -128,45 +148,77 @@ class AddStoryActivity : AppCompatActivity() {
     }
 
     private fun uploadStory(){
-        if (getFile != null){
-            val reduceFile= reduceFileSize(getFile as File)
-            val  descText = binding.edTextDesc.text.toString()
-            val desc = descText.toRequestBody("text/plain".toMediaType())
-            val reqImageFile = reduceFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
-            val imgMultipart:MultipartBody.Part = MultipartBody.Part.createFormData("photo",reduceFile.name,reqImageFile)
+        showLoading(true)
+        lifecycleScope.launchWhenStarted {
+            launch {
+                if (getFile != null) {
+                    val description = binding.edTextDesc
+                    val descText = description.text.toString().toRequestBody("text/plain".toMediaType())
+                    val reduceFile = reduceFileSize(getFile as File)
+                    val reqImage = reduceFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
+                    val imageMultipart: MultipartBody.Part =
+                        MultipartBody.Part.createFormData("photo", reduceFile.name, reqImage)
 
-            val token = "Bearer ${userPref.getUser().token}"
-            val client = ApiConfig().getApiService().uploadStories(token,imgMultipart,desc)
-            client.enqueue(object : Callback<UploadResponse> {
-                override fun onResponse(
-                    call: Call<UploadResponse>,
-                    response: Response<UploadResponse>
-                ) {
-                    showLoading(false)
-                    val responseBody = response.body()
-                    Log.d(TAG,"onResponse: $responseBody")
-                    if (response.isSuccessful){
-                        Toast.makeText(this@AddStoryActivity,getString(R.string.success_upload),Toast.LENGTH_SHORT).show()
-                        val intent = Intent(this@AddStoryActivity,MainActivity::class.java)
-                        startActivity(intent,ActivityOptionsCompat.makeSceneTransitionAnimation(this@AddStoryActivity as Activity).toBundle())
-                        finish()
+                    var lat: RequestBody? = null
+                    var lon: RequestBody? = null
+                    if (location != null) {
+                        lat =
+                            location?.latitude.toString().toRequestBody("text/plain".toMediaType())
+                        lon =
+                            location?.longitude.toString().toRequestBody("text/plain".toMediaType())
                     }
+
+                        addStoryViewModel.uploadStory(token, imageMultipart, descText, lat, lon).collect { response->
+                        response.onSuccess {
+                            showLoading(true)
+                            Toast.makeText(this@AddStoryActivity,getString(R.string.success_upload),Toast.LENGTH_SHORT).show()
+                            finish()
+                        }
+                        response.onFailure {
+                            showLoading(true)
+                            Toast.makeText(this@AddStoryActivity,getString(R.string.failed_upload),Toast.LENGTH_SHORT).show()
+
+                        }
+
+                        }
                 }
-
-
-                override fun onFailure(call: Call<UploadResponse>, t: Throwable) {
-                    showLoading(false)
-                    Log.e(TAG,"onFailure: ${t.message}")
-                    Toast.makeText(this@AddStoryActivity,getString(R.string.failed_upload),Toast.LENGTH_SHORT).show()
-                }
-
-
-            })
+            }
         }
-        else showLoading(false)
+
+
 
     }
 
+    private val requestPermissionLocation = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()
+    ){locPermission->
+        Log.d(TAG,"$locPermission")
+        when{
+            locPermission[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false -> {
+                getLocationUser()
+            }else->{
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).also { intent->
+                    val uriParts= Uri.fromParts("package",packageName,null)
+                    intent.data = uriParts
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    startActivity(intent)
+                }
+            }
+        }
+    }
+
+    private fun getLocationUser(){
+        if(ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_COARSE_LOCATION)==PackageManager.PERMISSION_GRANTED){
+            fusedLocation.lastLocation.addOnSuccessListener { location ->
+                if (location != null){
+                    this.location = location
+                    Log.d(TAG,"latitude: ${location.latitude}, longitude: ${location.longitude}")
+                }
+            }
+        }else{
+            requestPermissionLocation.launch(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION))
+
+        }
+    }
 
     private fun btnUploadAction(){
         val edDesc = binding.edTextDesc
@@ -196,14 +248,18 @@ class AddStoryActivity : AppCompatActivity() {
         binding.btUpload.setOnClickListener {
             uploadStory()
             val intent = Intent(this@AddStoryActivity,MainActivity::class.java)
-            startActivity(intent,
-                ActivityOptionsCompat.makeSceneTransitionAnimation(this@AddStoryActivity as Activity).toBundle())
-            finish()
+            startActivity(intent,ActivityOptionsCompat.makeSceneTransitionAnimation(this@AddStoryActivity as Activity).toBundle())
+            //finish()
+
 
         }
     }
     private fun showLoading(isLoading: Boolean) {
         binding.pbAdd.visibility = if (isLoading) View.VISIBLE else View.GONE
     }
-
+    companion object{
+        private val REQUIRED_PERMISSION = arrayOf(Manifest.permission.CAMERA)
+        private const val REQUEST_CODE_PERMISSION = 10
+        const val TAG = "extra_tag_map"
+    }
 }

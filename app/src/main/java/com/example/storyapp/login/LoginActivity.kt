@@ -1,34 +1,36 @@
 package com.example.storyapp.login
 
-import com.example.storyapp.register.RegisterActivity
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
-import androidx.lifecycle.ViewModelProvider
-import com.example.storyapp.main.MainActivity
+import androidx.appcompat.app.AppCompatActivity
+import androidx.paging.ExperimentalPagingApi
 import com.example.storyapp.R
+import com.example.storyapp.data.DataStoreViewModels
 import com.example.storyapp.databinding.ActivityLoginBinding
+import com.example.storyapp.main.MainActivity
+import com.example.storyapp.register.RegisterActivity
 import com.example.storyapp.user.UserModel
-import com.example.storyapp.user.UserPreference
+import dagger.hilt.android.AndroidEntryPoint
 
 
-
+@AndroidEntryPoint
+@ExperimentalPagingApi
 class LoginActivity : AppCompatActivity() {
     private  val binding by lazy(LazyThreadSafetyMode.NONE){
         ActivityLoginBinding.inflate(layoutInflater)}
-    private lateinit var loginViewModel:LoginViewModel
-    private lateinit var preferences:SharedPreferences
-    lateinit var userPref:UserPreference
+    private val loginViewModel by viewModels<LoginViewModel>()
+    private val dataStoreViewModel by viewModels<DataStoreViewModels>()
+
 
     override  fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,7 +39,7 @@ class LoginActivity : AppCompatActivity() {
         supportActionBar?.hide()
 
         setupLoginButton()
-        setupPref()
+
         buttonAction()
         setupViewModel()
         playAnim()
@@ -46,15 +48,12 @@ class LoginActivity : AppCompatActivity() {
 
 
     private fun setupViewModel() {
-        loginViewModel = ViewModelProvider(this)[LoginViewModel::class.java]
+        //loginViewModel = ViewModelProvider(this)[LoginViewModel::class.java]
         loginViewModel.isLoading.observe(this){ showLoading(it) }
         loginViewModel.toastMessage.observe(this) { toast(it) }
     }
 
-    private fun setupPref(){
-        preferences = getSharedPreferences(EXTRA_PREF,Context.MODE_PRIVATE)
-        userPref= UserPreference(this)
-    }
+
     private fun login(){
         val email = binding.edTextEmail.text.toString().trim()
         val password = binding.edTextPassword.text.toString().trim()
@@ -133,7 +132,8 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun saveUserModel(user:UserModel){
-        userPref.setUser(user)
+       // userPref.setUser(user)
+        dataStoreViewModel.setUserModel(user)
     }
     private fun showLoading(isLoading: Boolean) {
         binding.pbLogin.visibility = if (isLoading) View.VISIBLE else View.GONE
